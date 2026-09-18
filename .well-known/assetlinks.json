@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.hrkhan280_cmd.twa",
+    "sha256_cert_fingerprints": ["EA:20:81:20:75:7C:C4:25:5A:B1:41:C1:F4:69:93:6B:6A:95:30:80:AD:18:36:1B:91:78:E0:C9:D2:E8:DE:28"]
+  }
+}]
