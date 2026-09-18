@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Formulary — your clinical library</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3E7C74">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --paper:#F3F5F4;
+    --paper-raised:#FFFFFF;
+    --ink:#182029;
+    --ink-soft:#5B6570;
+    --teal:#3E7C74;
+    --teal-deep:#2B5952;
+    --coral:#B14B32;
+    --line:#D7DCDA;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+  }
+  .app{
+    max-width:560px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  header.top{
+    padding:16px 18px 12px;
+    position:sticky;
+    top:0;
+    background:var(--paper);
+    z-index:5;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .menu-btn{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:9px;
+    width:38px; height:38px;
+    font-size:18px;
+    color:var(--ink);
+    flex-shrink:0;
+    line-height:1;
+  }
+  header.top .titles{flex:1; min-width:0;}
+  header.top h1{
+    font-family:'Spectral', serif;
+    font-weight:500;
+    font-size:20px;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  header.top .sub{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  /* drawer nav */
+  .drawer-backdrop{
+    position:fixed; inset:0;
+    background:rgba(20,25,28,0.4);
+    opacity:0; pointer-events:none;
+    transition:opacity .18s;
+    z-index:20;
+  }
+  .drawer-backdrop.show{opacity:1; pointer-events:auto;}
+  .drawer{
+    position:fixed; top:0; bottom:0; left:0;
+    width:250px;
+    background:var(--paper-raised);
+    transform:translateX(-100%);
+    transition:transform .2s ease;
+    z-index:21;
+    padding:22px 0;
+    box-shadow:2px 0 16px rgba(0,0,0,0.12);
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-title{
+    font-family:'Spectral', serif;
+    font-weight:600;
+    font-size:19px;
+    padding:0 20px 18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:8px;
+  }
+  .drawer-item{
+    display:block;
+    width:100%;
+    text-align:left;
+    background:none;
+    border:none;
+    padding:13px 20px;
+    font-size:15px;
+    font-family:'IBM Plex Sans', sans-serif;
+    color:var(--ink);
+  }
+  .drawer-item.active{
+    color:var(--teal-deep);
+    font-weight:600;
+    background:#EDF3F1;
+  }
+
+  .search-wrap{padding:0 18px 8px;}
+  .search-box{
+    display:flex;
+    align-items:center;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:11px 14px;
+    gap:10px;
+  }
+  .search-box input{
+    border:none;
+    outline:none;
+    background:transparent;
+    flex:1;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .search-box input::placeholder{color:#9AA3A8;}
+  .search-box svg{flex-shrink:0;}
+
+  .mode-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--teal-deep);
+    background:#E7EFED;
+    border-radius:5px;
+    padding:2px 6px;
+    flex-shrink:0;
+  }
+
+  /* segmented age filter */
+  .segmented{
+    display:flex;
+    gap:6px;
+    padding:0 18px 10px;
+  }
+  .seg-btn{
+    flex:1;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 6px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  .seg-btn.active{
+    background:var(--teal);
+    border-color:var(--teal);
+    color:#fff;
+    font-weight:600;
+  }
+
+  .chips{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:2px 18px 10px;
+    scrollbar-width:none;
+  }
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0;
+    font-size:12.5px;
+    color:var(--teal-deep);
+    background:#E7EFED;
+    border:1px solid #D3E2DE;
+    padding:6px 12px;
+    border-radius:20px;
+    white-space:nowrap;
+    cursor:pointer;
+  }
+  .chip:active{background:#D3E2DE;}
+
+  main{flex:1; padding:6px 18px 32px;}
+
+  .empty-state{
+    margin-top:14vh;
+    text-align:center;
+    color:var(--ink-soft);
+    padding:0 24px;
+  }
+  .empty-state .mark{
+    width:34px;height:34px;
+    margin:0 auto 16px;
+    border:1.5px solid var(--ink-soft);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Spectral',serif;
+    font-style:italic;
+    font-size:16px;
+  }
+  .empty-state p{font-size:14px; line-height:1.6; margin:0 0 18px;}
+  .empty-state button{
+    background:var(--teal);
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:8px;
+    font-size:14px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:500;
+  }
+
+  .result{
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .result:first-child{padding-top:8px;}
+  .result-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+    gap:10px;
+  }
+  .result-book{
+    font-family:'Spectral', serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--teal-deep);
+    line-height:1.3;
+  }
+  .result-page{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .age-badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    color:var(--coral);
+    background:#F5E5DF;
+    border-radius:4px;
+    padding:1px 5px;
+    margin-left:6px;
+  }
+  .result-snippet{
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink);
+    white-space:pre-wrap;
+  }
+  .result-snippet mark{
+    background:#FCEBCB;
+    color:var(--ink);
+    border-radius:2px;
+    padding:0 1px;
+  }
+  .result-actions{
+    display:flex;
+    gap:16px;
+    margin-top:9px;
+    flex-wrap:wrap;
+  }
+  .result-toggle{
+    font-size:12px;
+    color:var(--teal);
+    cursor:pointer;
+    font-weight:500;
+  }
+
+  .result-count{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:6px 0 4px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  /* Library view */
+  .section-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin:22px 0 8px;
+  }
+  .section-label:first-child{margin-top:4px;}
+
+  .settings-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:4px 14px;
+  }
+  .switch-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .switch-row:last-child{border-bottom:none;}
+  .switch-row .label{font-size:13.5px; line-height:1.4;}
+  .switch-row .label .desc{display:block; font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .switch{
+    position:relative;
+    width:40px; height:23px;
+    flex-shrink:0;
+  }
+  .switch input{opacity:0; width:0; height:0;}
+  .switch .track{
+    position:absolute; inset:0;
+    background:#C8D0CD;
+    border-radius:20px;
+    transition:background .15s;
+  }
+  .switch .thumb{
+    position:absolute; top:2.5px; left:2.5px;
+    width:18px; height:18px;
+    background:#fff;
+    border-radius:50%;
+    transition:transform .15s;
+    box-shadow:0 1px 2px rgba(0,0,0,.2);
+  }
+  .switch input:checked + .track{background:var(--teal);}
+  .switch input:checked + .track .thumb{transform:translateX(17px);}
+
+  .status-text{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--teal-deep);
+    padding:2px 0 12px;
+  }
+
+  .book-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+    gap:12px;
+  }
+  .book-info .title{
+    font-family:'Spectral', serif;
+    font-weight:600;
+    font-size:15.5px;
+  }
+  .book-info .meta{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:2px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .book-remove{
+    background:none;
+    border:none;
+    color:var(--coral);
+    font-size:12.5px;
+    padding:6px 4px;
+    flex-shrink:0;
+  }
+
+  .add-doc-btn{
+    width:100%;
+    padding:13px;
+    background:var(--paper-raised);
+    border:1px dashed #B7C2BE;
+    border-radius:10px;
+    color:var(--teal-deep);
+    font-size:14px;
+    font-weight:500;
+    font-family:'IBM Plex Sans', sans-serif;
+    margin:10px 0 6px;
+  }
+
+  #fileInput{display:none;}
+
+  .progress-line{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    padding:8px 0;
+    font-family:'IBM Plex Mono', monospace;
+    line-height:1.6;
+  }
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .disclaimer{
+    font-size:11px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    padding:14px 0 4px;
+    border-top:1px solid var(--line);
+    margin-top:8px;
+  }
+
+  /* Topics view */
+  .topic-row{cursor:pointer;}
+  .topic-row .book-info .title{color:var(--ink);}
+  .topic-detail-header{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .topic-detail-header button{
+    background:none;
+    border:none;
+    color:var(--teal-deep);
+    font-size:14px;
+    font-weight:500;
+    padding:4px 0;
+    flex-shrink:0;
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  .summary-card{margin-bottom:8px;}
+  .ai-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--teal-deep);
+    background:#E7EFED;
+    border-radius:5px;
+    padding:3px 7px;
+    display:inline-block;
+    margin-bottom:10px;
+  }
+  .heading-count{
+    color:var(--ink-soft);
+    font-weight:400;
+  }
+
+  /* Reader view */
+  #readerContent{
+    font-size:14.5px;
+    line-height:1.75;
+    white-space:pre-wrap;
+    color:var(--ink);
+  }
+  .reader-pagebreak{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--teal-deep);
+    margin:18px 0 8px;
+    border-top:1px dashed var(--line);
+    padding-top:8px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="titles">
+      <h1>Formulary</h1>
+      <div class="sub" id="statusLine">Your library, searchable offline.</div>
+    </div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <nav class="drawer" id="drawer">
+    <div class="drawer-title">Formulary</div>
+    <button class="drawer-item active" data-view="search">Search</button>
+    <button class="drawer-item" data-view="topics">Topics</button>
+    <button class="drawer-item" data-view="library">Library</button>
+  </nav>
+
+  <!-- SEARCH VIEW -->
+  <div class="view active" id="view-search">
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5B6570" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" type="text" placeholder="Search your library…" autocomplete="off">
+        <span class="mode-tag" id="modeTag">keyword</span>
+      </div>
+    </div>
+    <div class="segmented" id="ageFilterSearch">
+      <button class="seg-btn active" data-age="all">All</button>
+      <button class="seg-btn" data-age="general">Adult / General</button>
+      <button class="seg-btn" data-age="pediatric">Pediatric</button>
+    </div>
+    <div class="chips" id="chipRow"></div>
+    <main>
+      <div id="resultsArea"></div>
+    </main>
+  </div>
+
+  <!-- LIBRARY VIEW -->
+  <div class="view" id="view-library">
+    <main style="padding-top:14px;">
+
+      <div class="section-label">Sources</div>
+      <div class="status-text" id="storageStatus">Checking storage protection…</div>
+      <input type="file" id="fileInput" accept=".pdf,.txt" multiple>
+      <button class="add-doc-btn" id="addDocBtn">+ Add PDF or text file</button>
+      <div class="progress-line" id="progressLine"></div>
+      <div id="bookList"></div>
+
+      <div class="section-label">Search intelligence</div>
+      <div class="settings-card">
+        <div class="switch-row">
+          <div class="label">Smart search
+            <span class="desc">Understands meaning, not just exact words. One-time ~25MB download, then fully offline.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="smartSearchToggle">
+            <div class="track"><div class="thumb"></div></div>
+          </label>
+        </div>
+        <div class="switch-row">
+          <div class="label">OCR for scanned pages
+            <span class="desc">Reads image-only PDF pages. Needs internet the first time it's used.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="ocrToggle" checked>
+            <div class="track"><div class="thumb"></div></div>
+          </label>
+        </div>
+        <div class="switch-row">
+          <div class="label">Full AI-written summary (optional)
+            <span class="desc">Writes flowing prose instead of extracted sentences. Large one-time download (700MB-1.5GB) — depends on your network being able to reach Hugging Face's servers, which isn't guaranteed everywhere. The instant summary above always works regardless.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="aiSummaryToggle">
+            <div class="track"><div class="thumb"></div></div>
+          </label>
+        </div>
+      </div>
+      <div class="status-text" id="smartStatus"></div>
+      <div class="status-text" id="llmStatus"></div>
+      <button class="add-doc-btn" id="reindexBtn" style="display:none;">Build smart index for existing library</button>
+      <button class="add-doc-btn" id="rebuildTopicsBtn" style="display:none;">Rebuild topic index for existing library</button>
+
+      <div class="disclaimer">
+        Everything you upload stays on this device — nothing is sent anywhere. Search results show the exact source text so you can verify dosing and interactions against the original before acting on them.
+      </div>
+    </main>
+  </div>
+
+  <!-- TOPICS VIEW -->
+  <div class="view" id="view-topics">
+    <main style="padding-top:14px;">
+      <div class="segmented" id="ageFilterTopics" style="padding:0 0 14px;">
+        <button class="seg-btn active" data-age="all">All</button>
+        <button class="seg-btn" data-age="general">Adult / General</button>
+        <button class="seg-btn" data-age="pediatric">Pediatric</button>
+      </div>
+      <div id="topicsList"></div>
+    </main>
+  </div>
+
+  <!-- TOPIC DETAIL VIEW -->
+  <div class="view" id="view-topic-detail">
+    <main style="padding-top:18px;">
+      <div class="topic-detail-header">
+        <button id="topicBack">‹ Topics</button>
+      </div>
+      <h2 id="topicTitle" style="font-family:'Spectral',serif; font-weight:600; font-size:20px; margin:0 0 14px;"></h2>
+      <div class="summary-card" id="summaryCard"></div>
+      <div id="aiSummaryArea" style="margin-bottom:14px;"></div>
+      <div id="topicSections"></div>
+    </main>
+  </div>
+
+  <!-- READER VIEW (full page / chapter) -->
+  <div class="view" id="view-reader">
+    <main style="padding-top:18px;">
+      <div class="topic-detail-header">
+        <button id="readerBack">‹ Back</button>
+      </div>
+      <h2 id="readerTitle" style="font-family:'Spectral',serif; font-weight:600; font-size:19px; margin:0 0 4px;"></h2>
+      <div class="status-text" id="readerMeta"></div>
+      <div id="readerContent"></div>
+    </main>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ============ persisted settings ============ */
+const SETTINGS_KEY = "formulary_settings";
+function loadSettings(){
+  try{ return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveSettings(s){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+let settings = Object.assign({ smartSearch:false, ocr:true, aiSummary:false }, loadSettings());
+
+/* ============ storage ============ */
+const DB_NAME = "formulary";
+const DB_VERSION = 2;
+let db;
+let memChunks = [];
+let memBooks = [];
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e)=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains("books")){
+        d.createObjectStore("books", {keyPath:"id"});
+      }
+      if(!d.objectStoreNames.contains("chunks")){
+        const s = d.createObjectStore("chunks", {keyPath:"id", autoIncrement:true});
+        s.createIndex("bookId", "bookId");
+      }
+      if(!d.objectStoreNames.contains("pages")){
+        d.createObjectStore("pages", {keyPath:"id"});
+      }
+    };
+    req.onsuccess = ()=>{ db = req.result; resolve(db); };
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+function tx(store, mode){ return db.transaction(store, mode).objectStore(store); }
+
+function idbAll(store){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store, "readonly").getAll();
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function idbGet(store, key){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store, "readonly").get(key);
+    req.onsuccess = ()=> resolve(req.result || null);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function idbPut(store, val){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store, "readwrite").put(val);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function idbDelete(store, key){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store, "readwrite").delete(key);
+    req.onsuccess = ()=> resolve();
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function idbDeleteWhere(store, indexName, value){
+  return new Promise((resolve, reject)=>{
+    const idx = tx(store, "readwrite").index(indexName);
+    const req = idx.openCursor(IDBKeyRange.only(value));
+    req.onsuccess = (e)=>{
+      const cursor = e.target.result;
+      if(cursor){ cursor.delete(); cursor.continue(); }
+      else resolve();
+    };
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+async function refreshMemCache(){
+  memChunks = await idbAll("chunks");
+  memBooks = await idbAll("books");
+}
+
+/* ============ age-group filter ============ */
+let ageFilter = "all";
+const PEDIATRIC_KEYWORDS = ["child","children","infant","infants","neonate","neonatal","paediatric","pediatric","adolescent","newborn","toddler","kids"];
+function classifyAgeGroup(text){
+  const lower = text.toLowerCase();
+  return PEDIATRIC_KEYWORDS.some(k=>lower.includes(k)) ? "pediatric" : "general";
+}
+function matchesAgeFilter(c){
+  if(ageFilter === "all") return true;
+  return (c.ageGroup || "general") === ageFilter;
+}
+function setAgeFilter(val){
+  ageFilter = val;
+  document.querySelectorAll(".seg-btn").forEach(b=> b.classList.toggle("active", b.dataset.age===val));
+  runSearch();
+  if(views.topics.classList.contains("active")) renderTopicsList();
+  if(views["topic-detail"].classList.contains("active") && currentTopicId){
+    renderTopicSections(currentTopicId);
+    renderSummaryCard(currentTopicId);
+  }
+}
+document.querySelectorAll(".seg-btn").forEach(b=>{
+  b.addEventListener("click", ()=> setAgeFilter(b.dataset.age));
+});
+
+/* ============ topic taxonomy & classification ============ */
+const TOPICS = [
+  { id:"pneumonia", label:"Pneumonia", system:"Infectious Disease", keywords:["pneumonia","community-acquired pneumonia","hospital-acq
